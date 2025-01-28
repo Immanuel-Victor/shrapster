@@ -3,6 +3,12 @@
 File sharing program intented to learn about socket comunication between a client and a server.
 The project was made as a proof of concept for the Distributed Systems discipline
 
+# Protocol
+
+### Client -> Server Calls
+
+1. JOIN (IP-ADRESS)
+
 # Contributors
 
 [Artur Almeida](https://www.genome.gov/)

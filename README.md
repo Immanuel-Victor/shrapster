@@ -8,6 +8,10 @@ The project was made as a proof of concept for the Distributed Systems disciplin
 ### Client -> Server Calls
 
 1. JOIN (IP-ADRESS)
+2. CREATEFILE (FILENAME) (SIZE IN BYTES)
+3. DELETEFILE (FILENAME)
+4. SEARCH (PATTERN)
+5. LEAVE
 
 # Contributors
 

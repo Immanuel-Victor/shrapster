@@ -41,8 +41,6 @@ export const handleSocket = (socket: net.Socket, eventEmitter: EventEmitter) => 
     socket.on('end', () => {
         console.log('Client disconnected');
         //Remove user from list -> socket.end bypasses LEAVE command, so it's necessary to repeat the logic
-        
-        socket.end();
     });
 
 }

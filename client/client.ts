@@ -4,14 +4,14 @@ import fs from 'fs'
 
 const eventEmitter = new EventEmitter();
 
-// const client = net.createConnection({ host: "localhost", port: 1234 }, () => {
-//     client.write("JOIN 123");
-// });
+const client = net.createConnection({ host: "localhost", port: 1234 }, () => {
+    client.write("JOIN 123");
+});
 
-// client.on("data", (data) => {
-//     console.log(data.toString());
+client.on("data", (data) => {
+    console.log(data.toString());
 
-// })
+})
 
 const server = net.createServer((socket: net.Socket) => {
     console.log('Client connected');
@@ -64,14 +64,19 @@ const getFile = (filename: string, start: number, end?: number) => {
 const requestFile = (host: string, fileName: string, start: number, end?: number) => {
     const offsetString = end ? `${start}-${end}` : start.toString()
     const client = net.createConnection({ host, port: 1235 }, () => {
+        console.log("Connected to host");
         client.write(`GET ${fileName} ${offsetString}`);
     });
 
     client.on("data", (data) => {
+        console.log(data.toString());
+        
         fs.writeFileSync(`${__dirname}/public/${fileName}`, data);
     })
 }
 
-server.listen(1235, () => {
+server.listen(1235, '0.0.0.0', () => {
     console.log('Server listening on port 1235');
 });
+
+requestFile("localhost", "aaa.txt", 0, 10);

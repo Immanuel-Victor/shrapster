@@ -17,6 +17,7 @@ export const handleEvents = (eventEmitter) => {
         if (userList[connectionId]) {
             const file: File = { filename, size };
             userList[connectionId].files.push(file);
+            console.log(userList)
             socket.write(`CONFIRMCREATEFILE ${filename}`);
         }
     });
@@ -24,10 +25,11 @@ export const handleEvents = (eventEmitter) => {
     eventEmitter.on("DELETEFILE", (socket: net.Socket, connectionId: string, fileName: string) => {
         if (userList[connectionId]) {
             {
-                const index = userList[connectionId].files.findIndex(file => file.filename == fileName);
-                if (index > -1) userList[connectionId].files.slice(index, 1);
+                userList[connectionId].files = userList[connectionId].files.filter(file => file.filename != fileName);
                 socket.write(`CONFIRMDELETEFILE ${fileName}`);
             }
+            console.log(JSON.stringify(userList[connectionId]));
+            
         }
     });
 

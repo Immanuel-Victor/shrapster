@@ -1,23 +1,62 @@
 import net from "net";
 import EventEmitter from "events";
 import fs from 'fs'
+import { getFile } from './files.ts'
+import { getFileName, getFileOffsets, getIpInput, joinServer, handleUserInteraction } from "./terminal-kit";
+import { terminal } from "terminal-kit";
 
 const eventEmitter = new EventEmitter();
-
-const client = net.createConnection({ host: "localhost", port: 1234 }, () => {
-    client.write("JOIN 123");
+const client = net.createConnection({ host: "localhost", port: 1234 }, async () => {
+    const response = await joinServer();
+    client.write(response)
 });
 
-client.on("data", (data) => {
-    console.log(data.toString());
+client.on("data", async (data) => {
+    const commands = data.toString().trim().split("\n");
+    commands.forEach(async command => {
+        const messages = command.split(" ");
+            if (messages[0] === 'CONFIRMJOIN' && messages[1]) {
+                const menuInteraction = await handleUserInteraction();
+                client.write(menuInteraction)
+            }
+    
+            if(messages[0] === 'CONFIRMCREATEFILE') {
+                terminal(`\n^GArquivo ^[white]${messages[1]} ^Gcriado com sucesso!\n`)
+                const menuInteraction = await handleUserInteraction();
+                client.write(menuInteraction)
+                terminal.grabInput(false)
+            }
 
-})
+            if(messages[0] === 'CONFIRMDELETEFILE') {
+                terminal(`\n^RArquivo ^[white]${messages[1]} ^Rremovido com sucesso!\n`)
+                const menuInteraction = await handleUserInteraction();
+                client.write(menuInteraction)
+                terminal.grabInput(false)
+            }
+            
+            if(messages[0] === 'CONFIRMLEAVE') {
+                terminal('Sentiremos sua falta\n');
+                terminal.grabInput(false);
+                process.exit()
+            }
+    
+            if(messages[0] === 'FILE') {
+                terminal(`\nArquivo ${messages[1]} encontrado com o usuário de ip ${messages[2]} de tamanho ${messages[3]} bytes`)
+            }
+    })
+});
 
 const server = net.createServer((socket: net.Socket) => {
     console.log('Client connected');
 });
 
-server.on("connection", (socket: net.Socket) => {
+server.on("connection", async (socket: net.Socket) => {
+    const connectionIP = await getIpInput();
+    const fileName = await getFileName();
+    const fileOffsets = await getFileOffsets();
+
+    requestFile(connectionIP, fileName, fileOffsets[0], fileOffsets[1]);
+    
     socket.on("data", async (data) => {
         const message = data.toString().trim().split(" ")
         if (message[0] === 'GET') {
@@ -38,31 +77,9 @@ server.on("connection", (socket: net.Socket) => {
     })
 });
 
-const getFile = (filename: string, start: number, end?: number) => {
-    return new Promise<Buffer>((resolve, reject) => {
-        const offsets = end ? { start, end } : { start };
-        const chunks: (string | Buffer<ArrayBufferLike>)[] = [];
-    
-        const stream = fs.createReadStream(`${__dirname}/public/${filename}`, offsets);
-    
-        stream.on('data', (chunk) => {
-            chunks.push(chunk);
-        });
-        
-        stream.on('end', () => {
-            resolve(Buffer.concat(chunks as any[]))
-        });
-        
-        stream.on('error', (err) => {
-            console.log(err.message)
-            reject(Buffer.from("Erro ao ler o arquivo"));
-        });
-
-    })
-}
-
 const requestFile = (host: string, fileName: string, start: number, end?: number) => {
     const offsetString = end ? `${start}-${end}` : start.toString()
+    console.log(`GET ${fileName} ${offsetString}`)
     const client = net.createConnection({ host, port: 1235 }, () => {
         console.log("Connected to host");
         client.write(`GET ${fileName} ${offsetString}`);
@@ -78,5 +95,3 @@ const requestFile = (host: string, fileName: string, start: number, end?: number
 server.listen(1235, '0.0.0.0', () => {
     console.log('Server listening on port 1235');
 });
-
-requestFile("localhost", "aaa.txt", 0, 10);

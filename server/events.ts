@@ -10,14 +10,12 @@ export const handleEvents = (eventEmitter) => {
         if (!userList[connectionId]) userList[connectionId] = { ip: clientIP, files: [] };
         socket.write(`CONFIRMJOIN - You are registered with IP: ${clientIP}\n`);
         console.log(userList);
-
     });
 
     eventEmitter.on("CREATEFILE", (socket: net.Socket, connectionId: string, filename: string, size: number) => {
         if (userList[connectionId]) {
             const file: File = { filename, size };
             userList[connectionId].files.push(file);
-            console.log(userList)
             socket.write(`CONFIRMCREATEFILE ${filename}\n`);
         }
     });
@@ -28,8 +26,6 @@ export const handleEvents = (eventEmitter) => {
                 userList[connectionId].files = userList[connectionId].files.filter(file => file.filename != fileName);
                 socket.write(`CONFIRMDELETEFILE ${fileName}\n`);
             }
-            console.log(JSON.stringify(userList[connectionId]));
-            
         }
     });
 

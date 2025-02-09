@@ -64,7 +64,7 @@ function deleteArchive(userCreatedFiles: string[], peerList): Promise<string> {
 
         terminal.gridMenu(userCreatedFiles, (error, response) => {
             const file = userCreatedFiles[response.selectedIndex];
-            resolve(`DELETEFILE ${file}`)
+            resolve(`DELETEFILE ${file}\n`)
         })
     })
 
@@ -76,7 +76,9 @@ function searchArchives(message: string = "\nCerto, por favor, informe o padrão
     return new Promise(resolve => {
         terminal.inputField((error, pattern) => {
             if (pattern) {
-                resolve(`SEARCH ${pattern}`)
+                console.log('\n', pattern)
+                resolve(`SEARCH ${pattern}\n`)
+                terminal.grabInput(false)
             } else {
                 terminal("sinto muito, não entendi")
                 resolve(searchArchives("\nVamos tentar novamente, digite um padrão ou valor de busca"))
@@ -93,7 +95,7 @@ function leaveServer(userCreatedFiles: string[], peerList): Promise<string> {
             if(response.selectedIndex === 0) {
                 terminal("\n")
                 terminal.grabInput(false)
-                resolve(`LEAVE`)
+                resolve(`LEAVE\n`)
             } else {
                 resolve(handleUserInteraction(userCreatedFiles, peerList));
             }
@@ -142,8 +144,8 @@ function getFileName(connectionIP, peerList): Promise<string> {
     return new Promise((resolve) => {
         terminal("Qual arquivo você gostaria de baixar?")
 
-        terminal.gridMenu(peerList[connectionIP].files.map(file => file.filename), (error, response) => {
-            const chosenFile = peerList[connectionIP].files.filter(file => file.fileName === response.selectedText);
+        terminal.gridMenu(peerList[connectionIP].files.map(file => file.fileName), (error, response) => {
+            const chosenFile = peerList[connectionIP].files.filter(file => file.fileName === response.selectedText)[0].fileName;
             terminal.grabInput(false)
             resolve(chosenFile);
         })
@@ -152,7 +154,7 @@ function getFileName(connectionIP, peerList): Promise<string> {
 
 function getFileOffsets(): Promise<number[]> {
     return new Promise((resolve) => {
-        terminal("Quanto do arquivo você gostaria de receber? (Digite um offset no formato: 0-1000)")
+        terminal("Quanto do arquivo você gostaria de receber? (Digite um offset no formato: 0-1000): ")
 
         terminal.inputField((error, input) => {
             if (input) {
@@ -163,9 +165,10 @@ function getFileOffsets(): Promise<number[]> {
                     offsetEnd = parseInt(offsets[1])
                     resolve([offsetStart,offsetEnd])
                 }
-
+                terminal.grabInput(false)
                 resolve([offsetStart])
             } else {
+                terminal.grabInput(false)
                 resolve([0])
             }
         })
@@ -179,7 +182,7 @@ async function downloadFile(peersList, userCreatedFiles): Promise<string> {
 
     requestFile(connectionIP, fileName, fileOffsets[0], fileOffsets[1]);
 
-    return "O arquivo será requisitado ao usuário. Em caso de sucesso, ele deverá estar disponível em sua pasta public."
+    return handleUserInteraction(userCreatedFiles, peersList)
 }
 
 export {

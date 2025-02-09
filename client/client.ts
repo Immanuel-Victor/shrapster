@@ -2,9 +2,8 @@ import net from "net";
 import EventEmitter from "events";
 import fs from 'fs'
 import { getFile } from './files.ts'
-import { getFileName, getFileOffsets, getIpInput, joinServer, handleUserInteraction } from "./terminal-kit";
+import { joinServer, handleUserInteraction } from "./terminal-kit";
 import { terminal } from "terminal-kit";
-import { File } from "../types.ts";
 
 const eventEmitter = new EventEmitter();
 const client = net.createConnection({ host: "localhost", port: 1234 }, async () => {
@@ -53,22 +52,26 @@ client.on("data", async (data) => {
                         files: []
                     }
                 }
-                peers[messages[2]]['files'].push({ filename: messages[1], size: parseInt(messages[3]) })
-                console.log(peers)
-                if (index == (commandArray.length - 1)) handleUserInteraction(userCreatedFiles, peers);
+                const newFile = { fileName: messages[1], size: parseInt(messages[3]) }
+                const alreadyExists = (peers[messages[2]]['files'] as [] || undefined).findIndex((file: any) => (file.fileName == newFile.fileName && file.size == newFile.size)) > -1
+                if (!alreadyExists) {
+                    peers[messages[2]]['files'].push(newFile)
+                }
+                if (index == (commandArray.length - 1)) {
+                    const menuInteraction = await handleUserInteraction(userCreatedFiles, peers);
+                    client.write(menuInteraction)
+                }
             }
     })
 });
 
-const server = net.createServer((socket: net.Socket) => {
-    console.log('Client connected');
-});
+const server = net.createServer((socket: net.Socket) => {});
 
 server.on("connection", async (socket: net.Socket) => {
     socket.on("data", async (data) => {
         const message = data.toString().trim().split("\n")[0].split(" ")
         if (message[0] === 'GET') {
-            const filename = message[1];
+            const fileName = message[1];
 
             const offsets = message[2].split("-");
             const offsetStart = parseInt(offsets[0]);
@@ -77,7 +80,7 @@ server.on("connection", async (socket: net.Socket) => {
                 offsetEnd = parseInt(offsets[1])
             }
 
-            const file = await getFile(filename, offsetStart, offsetEnd);
+            const file = await getFile(fileName, offsetStart, offsetEnd);
 
             socket.write(file);
         }
@@ -87,23 +90,16 @@ server.on("connection", async (socket: net.Socket) => {
 
 export const requestFile = (host: string, fileName: string, start: number, end?: number) => {
     const offsetString = end ? `${start}-${end}` : start.toString()
-    console.log(`GET ${fileName} ${offsetString}`)
     const client = net.createConnection({ host, port: 1235 }, () => {
-        console.log("Connected to host");
         client.write(`GET ${fileName} ${offsetString}\n`);
     });
 
     client.on("data", (data) => {
-        console.log(data.toString());
-        
         fs.writeFileSync(`${__dirname}/public/${fileName}`, data);
-        client.end();
     })
 }
 
-server.listen(1235, '0.0.0.0', () => {
-    console.log('Server listening on port 1235');
-});
+server.listen(1235, '0.0.0.0', () => {});
 
 
 process.on('SIGINT', () => {

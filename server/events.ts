@@ -8,7 +8,7 @@ export const handleEvents = (eventEmitter) => {
         console.log("connectionId connection: ", connectionId)
         console.log(`Client ${clientIP} joined.`);
         if (!userList[connectionId]) userList[connectionId] = { ip: clientIP, files: [] };
-        socket.write(`CONFIRMJOIN - You are registered with IP: ${clientIP}`);
+        socket.write(`CONFIRMJOIN - You are registered with IP: ${clientIP}\n`);
         console.log(userList);
 
     });
@@ -18,7 +18,7 @@ export const handleEvents = (eventEmitter) => {
             const file: File = { filename, size };
             userList[connectionId].files.push(file);
             console.log(userList)
-            socket.write(`CONFIRMCREATEFILE ${filename}`);
+            socket.write(`CONFIRMCREATEFILE ${filename}\n`);
         }
     });
 
@@ -26,7 +26,7 @@ export const handleEvents = (eventEmitter) => {
         if (userList[connectionId]) {
             {
                 userList[connectionId].files = userList[connectionId].files.filter(file => file.filename != fileName);
-                socket.write(`CONFIRMDELETEFILE ${fileName}`);
+                socket.write(`CONFIRMDELETEFILE ${fileName}\n`);
             }
             console.log(JSON.stringify(userList[connectionId]));
             
@@ -49,15 +49,20 @@ export const handleEvents = (eventEmitter) => {
         if (!resultList) {
             socket.write("eu num sabo não, chefe :(")
         }
+
+        let fileList = ''
+
         for (const file of resultList) {
-            socket.write(`FILE ${file.filename} ${file.ipAddress} ${file.sizeInBytes}`)
+            fileList += `FILE ${file.filename} ${file.ipAddress} ${file.sizeInBytes}\n`
         }
+
+        socket.write(fileList)
     });
 
     eventEmitter.on("LEAVE", (socket: net.Socket, connectionId: string) => {
         if (userList[connectionId]) delete userList[connectionId];
         console.log(userList);
-        socket.write(`CONFIRMLEAVE`);
+        socket.write(`CONFIRMLEAVE\n`);
     });
 
 }

@@ -15,3 +15,8 @@ handleEvents(eventEmitter);
 server.listen(1234, () => {
   console.log('Server listening on port 1234');
 });
+
+process.on('SIGINT', () => {
+  server.close();
+  setTimeout(() => process.exit(), 500); // Allow time for cleanup
+});

@@ -4,6 +4,7 @@ import fs from 'fs'
 import { getFile } from './files.ts'
 import { getFileName, getFileOffsets, getIpInput, joinServer, handleUserInteraction } from "./terminal-kit";
 import { terminal } from "terminal-kit";
+import { File } from "../types.ts";
 
 const eventEmitter = new EventEmitter();
 const client = net.createConnection({ host: "localhost", port: 1234 }, async () => {
@@ -11,25 +12,30 @@ const client = net.createConnection({ host: "localhost", port: 1234 }, async () 
     client.write(response)
 });
 
+let userCreatedFiles: string[] = []
+const peers = {}
+
 client.on("data", async (data) => {
     const commands = data.toString().trim().split("\n");
-    commands.forEach(async command => {
+    commands.forEach(async (command, index, commandArray) => {
         const messages = command.split(" ");
             if (messages[0] === 'CONFIRMJOIN' && messages[1]) {
-                const menuInteraction = await handleUserInteraction();
+                const menuInteraction = await handleUserInteraction(userCreatedFiles, peers);
                 client.write(menuInteraction)
             }
-    
+
             if(messages[0] === 'CONFIRMCREATEFILE') {
                 terminal(`\n^GArquivo ^[white]${messages[1]} ^Gcriado com sucesso!\n`)
-                const menuInteraction = await handleUserInteraction();
+                userCreatedFiles.push(messages[1])
+                const menuInteraction = await handleUserInteraction(userCreatedFiles, peers);
                 client.write(menuInteraction)
                 terminal.grabInput(false)
             }
 
             if(messages[0] === 'CONFIRMDELETEFILE') {
                 terminal(`\n^RArquivo ^[white]${messages[1]} ^Rremovido com sucesso!\n`)
-                const menuInteraction = await handleUserInteraction();
+                userCreatedFiles = userCreatedFiles.filter((file) => file !== messages[1])
+                const menuInteraction = await handleUserInteraction(userCreatedFiles, peers);
                 client.write(menuInteraction)
                 terminal.grabInput(false)
             }
@@ -42,6 +48,14 @@ client.on("data", async (data) => {
     
             if(messages[0] === 'FILE') {
                 terminal(`\nArquivo ${messages[1]} encontrado com o usuário de ip ${messages[2]} de tamanho ${messages[3]} bytes`)
+                if(!peers[messages[2]]) {
+                    peers[messages[2]] = {
+                        files: []
+                    }
+                }
+                peers[messages[2]]['files'].push({ filename: messages[1], size: parseInt(messages[3]) })
+                console.log(peers)
+                if (index == (commandArray.length - 1)) handleUserInteraction(userCreatedFiles, peers);
             }
     })
 });
@@ -51,14 +65,8 @@ const server = net.createServer((socket: net.Socket) => {
 });
 
 server.on("connection", async (socket: net.Socket) => {
-    const connectionIP = await getIpInput();
-    const fileName = await getFileName();
-    const fileOffsets = await getFileOffsets();
-
-    requestFile(connectionIP, fileName, fileOffsets[0], fileOffsets[1]);
-    
     socket.on("data", async (data) => {
-        const message = data.toString().trim().split(" ")
+        const message = data.toString().trim().split("\n")[0].split(" ")
         if (message[0] === 'GET') {
             const filename = message[1];
 
@@ -77,21 +85,29 @@ server.on("connection", async (socket: net.Socket) => {
     })
 });
 
-const requestFile = (host: string, fileName: string, start: number, end?: number) => {
+export const requestFile = (host: string, fileName: string, start: number, end?: number) => {
     const offsetString = end ? `${start}-${end}` : start.toString()
     console.log(`GET ${fileName} ${offsetString}`)
     const client = net.createConnection({ host, port: 1235 }, () => {
         console.log("Connected to host");
-        client.write(`GET ${fileName} ${offsetString}`);
+        client.write(`GET ${fileName} ${offsetString}\n`);
     });
 
     client.on("data", (data) => {
         console.log(data.toString());
         
         fs.writeFileSync(`${__dirname}/public/${fileName}`, data);
+        client.end();
     })
 }
 
 server.listen(1235, '0.0.0.0', () => {
     console.log('Server listening on port 1235');
+});
+
+
+process.on('SIGINT', () => {
+    client.end();
+    server.close();
+    setTimeout(() => process.exit(), 500); // Allow time for cleanup
 });

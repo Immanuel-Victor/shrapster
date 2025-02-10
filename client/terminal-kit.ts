@@ -10,6 +10,7 @@ export const terminal = termKit.terminal()
 function handleUserInteraction(userFiles: string[], peerList): Promise<string> {
     const menuOptions = ["Criar Arquivo", "Buscar Arquivo", "Remover Arquivo", "Baixar Arquivo", "Sair ->"]
     terminal("\n^cOlá, seja bem vindo!  O que você gostaria de fazer agora?")
+    
     return new Promise((resolve) => {
         terminal.singleColumnMenu( menuOptions, (error, response) => {
             switch(response.selectedIndex) {
@@ -27,7 +28,7 @@ function handleUserInteraction(userFiles: string[], peerList): Promise<string> {
                     break;
                 case 4:
                     resolve(leaveServer(userFiles, peerList));
-                    break
+                    break;
             }   
         })
     })

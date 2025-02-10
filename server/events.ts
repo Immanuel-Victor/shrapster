@@ -56,9 +56,13 @@ export const handleEvents = (eventEmitter) => {
     });
 
     eventEmitter.on("LEAVE", (socket: net.Socket, connectionId: string) => {
-        if (userList[connectionId]) delete userList[connectionId];
+        logoutUser(connectionId);
         console.log(userList);
         socket.write(`CONFIRMLEAVE\n`);
     });
 
+}
+
+export const logoutUser = (connectionId: string) => {
+    if (userList[connectionId]) delete userList[connectionId];
 }

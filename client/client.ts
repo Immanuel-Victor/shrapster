@@ -65,6 +65,10 @@ client.on("data", async (data) => {
     })
 });
 
+client.on("error", () => {
+    clearClient();
+})
+
 const server = net.createServer((socket: net.Socket) => {});
 
 server.on("connection", async (socket: net.Socket) => {
@@ -96,6 +100,10 @@ export const requestFile = (host: string, fileName: string, start: number, end?:
 
     client.on("data", (data) => {
         fs.writeFileSync(`${__dirname}/public/${fileName}`, data);
+    });
+
+    client.on("error", () => {
+        client.end()
     })
 }
 
@@ -103,7 +111,11 @@ server.listen(1235, '0.0.0.0', () => {});
 
 
 process.on('SIGINT', () => {
+    clearClient()
+});
+
+const clearClient = () => {
     client.end();
     server.close();
-    setTimeout(() => process.exit(), 500); // Allow time for cleanup
-});
+    setTimeout(() => process.exit(), 500);
+}

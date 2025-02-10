@@ -2,6 +2,7 @@ import net from 'net'
 import EventEmitter from 'events';
 import { v4 } from 'uuid';
 import { File } from '../types';
+import { logoutUser } from './events';
 
 export const handleSocket = (socket: net.Socket, eventEmitter: EventEmitter) => {
 
@@ -38,11 +39,13 @@ export const handleSocket = (socket: net.Socket, eventEmitter: EventEmitter) => 
     });
 
     socket.on('error', () => {
-        console.log('Error occurred')
+        console.log('Forcefull Disconection')
+        logoutUser(connectionId)
     })
 
     socket.on('end', () => {
         console.log('Client disconnected');
+        logoutUser(connectionId);
         //Remove user from list -> socket.end bypasses LEAVE command, so it's necessary to repeat the logic
     });
 

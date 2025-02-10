@@ -86,9 +86,31 @@ server.on("connection", async (socket: net.Socket) => {
 
             const file = await getFile(fileName, offsetStart, offsetEnd);
 
+            let offSet = 0;
+            const chunkSize = 64*1024;
+
+            const sendChunk = () => {
+                if (offSet >= file.length) {
+                    socket.end();
+                    return;
+                }
+
+                const chunk = file.slice(offSet, offSet + chunkSize);
+                const canContinue = socket.write(chunk);
+
+                offSet += chunkSize;
+
+                if (!canContinue) {
+                    socket.once('drain', sendChunk);
+                }
+                else setImmediate(sendChunk);
+            }
+
             socket.write(file);
+            socket.end()
         }
 
+        socket.on('error', () => {})
     })
 });
 
@@ -98,11 +120,25 @@ export const requestFile = (host: string, fileName: string, start: number, end?:
         client.write(`GET ${fileName} ${offsetString}\n`);
     });
 
+    const path = `${__dirname}/public/${fileName}`;
+    const writeStream = fs.createWriteStream(path);
     client.on("data", (data) => {
-        fs.writeFileSync(`${__dirname}/public/${fileName}`, data);
+        const canContinue = writeStream.write(data);
+        if (!canContinue) {
+            client.pause();
+        }
     });
 
+    writeStream.on('drain', () => {
+        client.resume();
+    });
+
+    client.on("end", () => {
+        writeStream.end();
+    })
+
     client.on("error", () => {
+        writeStream.end();
         client.end()
     })
 }

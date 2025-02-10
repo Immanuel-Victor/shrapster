@@ -1,5 +1,6 @@
 import net from 'net'
 import { UserList, File } from '../types';
+import { parseRegex } from '../utils';
 
 const userList: UserList = {};
 
@@ -35,15 +36,14 @@ export const handleEvents = (eventEmitter) => {
             ipAddress: string,
             sizeInBytes: number,
         }[] = [];
+        const regexPattern = parseRegex(searchPattern)
+  
         for (let conId in userList) {
-            userList[conId].files.filter(file => file.filename.match(searchPattern)).forEach(foundFile => resultList.push({
+            userList[conId].files.filter(file => file.filename.match(regexPattern)).forEach(foundFile => resultList.push({
                 filename: foundFile.filename,
                 ipAddress: userList[conId].ip,
                 sizeInBytes: foundFile.size
             }))
-        }
-        if (!resultList) {
-            socket.write("eu num sabo não, chefe :(")
         }
 
         let fileList = ''

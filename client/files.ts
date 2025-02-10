@@ -17,7 +17,6 @@ export const getFile = (filename: string, start: number, end?: number) => {
         });
         
         stream.on('error', (err) => {
-            console.log(err.message)
             reject(Buffer.from("Erro ao ler o arquivo"));
         });
     })

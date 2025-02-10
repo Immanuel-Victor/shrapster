@@ -77,7 +77,6 @@ function searchArchives(message: string = "\nCerto, por favor, informe o padrão
     return new Promise(resolve => {
         terminal.inputField((error, pattern) => {
             if (pattern) {
-                console.log('\n', pattern)
                 resolve(`SEARCH ${pattern}\n`)
                 terminal.grabInput(false)
             } else {
@@ -122,9 +121,7 @@ function joinServer(): Promise<string> {
 }
 
 function getIpInput(peerList, userCreatedFiles: string[]): Promise<string> {
-    console.log(peerList)
     const peersArray = Object.keys(peerList)
-    console.log(peerList)
     return new Promise((resolve) => {
         if(peerList.length === 0) {
             terminal("\n^RSinto muito, você não pesquisou nenhum arquivo, portanto não posso te indicar um peer para se conectar\n")
@@ -181,7 +178,7 @@ async function downloadFile(peersList, userCreatedFiles): Promise<string> {
     const fileName = await getFileName(connectionIP, peersList);
     const fileOffsets = await getFileOffsets();
 
-    requestFile(connectionIP, fileName, fileOffsets[0], fileOffsets[1]);
+    await requestFile(connectionIP, fileName, fileOffsets[0], fileOffsets[1]);
 
     return handleUserInteraction(userCreatedFiles, peersList)
 }

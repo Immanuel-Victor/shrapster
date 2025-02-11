@@ -26,7 +26,9 @@ To run the project
 5. if you want to download files but you're not in the same network, download a tool like RadminVPN or Hamachi and create a LAN Network
 
 6. If you would like to connect with another client, follow the protocol available down bellow and just connect to your server 
+
 ![code_snippet](image/README/code_snippet.png)
+
 You just have to change -> `localhost` to the ipv4 where the server is running
 
 

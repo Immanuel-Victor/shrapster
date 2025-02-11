@@ -18,7 +18,7 @@ client.on("data", async (data) => {
     const commands = data.toString().trim().split("\n");
     commands.forEach(async (command, index, commandArray) => {
         const messages = command.split(" ");
-            if (messages[0] === 'CONFIRMJOIN' && messages[1]) {
+            if (messages[0] === 'CONFIRMJOIN') {
                 const menuInteraction = await handleUserInteraction(userCreatedFiles, peers);
                 client.write(menuInteraction)
             }
@@ -115,7 +115,7 @@ server.on("connection", async (socket: net.Socket) => {
 });
 
 export const requestFile = (host: string, fileName: string, start: number, end?: number) => {
-    const offsetString = end ? `${start}-${end}` : start.toString()
+    const offsetString = end ? `${start}-${end}` : `${start.toString()}-`
     const client = net.createConnection({ host, port: 1235 }, () => {
         client.write(`GET ${fileName} ${offsetString}\n`);
     });

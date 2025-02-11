@@ -9,7 +9,7 @@ export const handleEvents = (eventEmitter) => {
         console.log("connectionId connection: ", connectionId)
         console.log(`Client ${clientIP} joined.`);
         if (!userList[connectionId]) userList[connectionId] = { ip: clientIP, files: [] };
-        socket.write(`CONFIRMJOIN - You are registered with IP: ${clientIP}\n`);
+        socket.write(`CONFIRMJOIN\n`);
         console.log(userList);
     });
 
